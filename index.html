@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Block Blast 游戏</title>
+    <style>
+        :root {
+            /* Light Theme (Default) - iOS Style */
+            --bg-main: #F2F2F7;
+            --bg-container: #FFFFFF;
+            --bg-board: #E5E5EA;
+            --bg-cell: #FFFFFF;
+            --bg-piece-wrapper: #F2F2F7;
+            --bg-score-board: #F2F2F7;
+            --bg-game-over: rgba(0, 0, 0, 0.4);
+
+            --text-primary: #000000;
+            --text-secondary: #6B6B70;
+            --text-on-accent: #FFFFFF;
+            --text-accent: #007AFF;
+            
+            --accent-color: #007AFF; /* iOS Blue */
+            --accent-hover: #0056b3;
+            --filled-cell-color: #007AFF;
+            --filled-cell-shadow: none;
+            --preview-color: rgba(0, 122, 255, 0.25);
+            --invalid-color: rgba(255, 59, 48, 0.3); /* iOS Red */
+
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --container-shadow: 0 8px 32px var(--shadow-color);
+            --button-shadow: 0 2px 5px var(--shadow-color);
+            
+            --toggle-bg-off: #E9E9EB;
+            --toggle-bg-on: #34C759; /* iOS Green */
+            --toggle-handle-color: #FFFFFF;
+        }
+
+        body.dark-theme {
+            /* Dark Theme - Premium Black/White/Gray */
+            --bg-main: #000000;
+            --bg-container: #1C1C1E; /* iOS Dark Gray */
+            --bg-board: #2C2C2E;
+            --bg-cell: #3A3A3C;
+            --bg-piece-wrapper: #2C2C2E;
+            --bg-score-board: #2C2C2E;
+            --bg-game-over: rgba(0, 0, 0, 0.7);
+
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --text-on-accent: #FFFFFF;
+            --text-accent: #0A84FF;
+
+            --accent-color: #0A84FF; /* iOS Blue (Dark) */
+            --accent-hover: #409CFF;
+            --filled-cell-color: #0A84FF;
+            --filled-cell-shadow: none;
+            --preview-color: rgba(10, 132, 255, 0.35);
+            --invalid-color: rgba(255, 69, 58, 0.4); /* iOS Red (Dark) */
+
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --container-shadow: 0 8px 32px var(--shadow-color);
+            --button-shadow: none;
+
+            --toggle-bg-off: #2C2C2E;
+            --toggle-bg-on: #30D158; /* iOS Green (Dark) */
+            --toggle-handle-color: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial", sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .game-container {
+            background: var(--bg-container);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: var(--container-shadow);
+            max-width: 420px;
+            width: 100%;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--text-accent); font-size: 28px; font-weight: 700; user-select: none; }
+
+        .score-board {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--bg-score-board);
+            border-radius: 12px;
+            transition: background 0.3s;
+        }
+        .score-item { text-align: center; }
+        .score-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; user-select: none; }
+        .score-value { font-size: 22px; font-weight: 600; color: var(--text-primary); transition: color 0.3s; }
+        #global-rank, #percentile { color: var(--accent-color); }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            background: var(--bg-board);
+            padding: 8px;
+            border-radius: 16px;
+            margin: 0 auto 24px;
+            aspect-ratio: 1;
+            touch-action: none;
+        }
+        .cell { background: var(--bg-cell); border-radius: 6px; transition: all 0.2s; }
+        .cell.filled { background: var(--filled-cell-color); box-shadow: var(--filled-cell-shadow); }
+        .cell.preview { background: var(--preview-color); }
+        .cell.invalid { background: var(--invalid-color); }
+        .cell.clearing { animation: clearAnimation 0.5s ease-out; }
+
+        @keyframes clearAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); background: #FFD60A; opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .pieces-container { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 24px; min-height: 80px; align-items: center; }
+        .piece-wrapper {
+            padding: 8px;
+            border-radius: 10px;
+            cursor: grab;
+            transition: all 0.2s ease-out;
+            user-select: none;
+            touch-action: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-piece-wrapper);
+        }
+        .piece-wrapper:hover:not(.used) { transform: translateY(-5px); }
+        .piece-wrapper:active:not(.used) { cursor: grabbing; transform: scale(1.1); }
+        .piece-wrapper.dragging { opacity: 0.3; }
+        .piece-wrapper.used { opacity: 0.3; pointer-events: none; }
+        .piece { display: grid; gap: 3px; pointer-events: none; }
+        .piece-cell { width: 18px; height: 18px; background: transparent; border-radius: 4px; }
+        .piece-cell.filled { background: var(--filled-cell-color); }
+        
+        .drag-ghost { position: fixed; pointer-events: none; z-index: 1000; opacity: 0.95; left: 0; top: 0; padding: 8px; border-radius: 10px; background: var(--bg-container); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+        .buttons { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px;}
+        button { padding: 14px 20px; font-size: 17px; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s; flex-grow: 1; }
+        .btn-new-game { background: var(--accent-color); color: var(--text-on-accent); box-shadow: var(--button-shadow); }
+        .btn-new-game:hover { background: var(--accent-hover); }
+        #sound-btn { background: var(--bg-score-board); color: var(--text-primary); }
+        #sound-btn.muted { background: #FF3B30; color: white;}
+
+        .settings { padding: 10px; background: var(--bg-score-board); border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; }
+        .setting-label { font-size: 15px; color: var(--text-primary); }
+        .toggle-switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--toggle-bg-off); transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: var(--toggle-handle-color); transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--toggle-bg-on); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .game-over { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-game-over); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .game-over-content { background: var(--bg-container); padding: 30px 40px; border-radius: 20px; text-align: center; animation: slideIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        @keyframes slideIn { from { transform: translateY(-50px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        .game-over h2 { color: var(--text-accent); margin-bottom: 15px; font-size: 28px; }
+        .game-over p { font-size: 20px; margin-bottom: 25px; color: var(--text-primary); }
+
+        .combo-indicator { position: fixed; top: 25%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; font-weight: bold; color: #FFD60A; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); pointer-events: none; animation: comboAnimation 1s ease-out; z-index: 999; display: none; }
+        @keyframes comboAnimation { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-五十%, -100%) scale(1); opacity: 0; } }
+
+        @media (max-width: 400px) {
+            .game-container { padding: 15px; }
+            .game-container h1 { font-size: 24px; }
+            .piece-cell { width: 16px; height: 16px; }
+            .game-board { gap: 3px; padding: 5px; border-radius: 12px;}
+            .score-value { font-size: 20px; }
+        }
+
+        /* SEO Content Styles */
+        .seo-content {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background: var(--bg-container);
+            border-radius: 24px;
+            box-shadow: var(--container-shadow);
+            color: var(--text-primary);
+            line-height: 1.8;
+            transition: background 0.3s, box-shadow 0.3s, color 0.3s;
+        }
+
+        .seo-content h1 {
+            color: var(--text-accent);
+            font-size: 36px;
+            font-weight: 700;
+            margin: 30px 0;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .seo-content h2 {
+            color: var(--text-accent);
+            font-size: 28px;
+            font-weight: 700;
+            margin: 25px 0 20px 0;
+            line-height: 1.3;
+        }
+
+        .seo-content h3 {
+            color: var(--text-accent);
+            font-size: 22px;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+        }
+
+        .seo-content h4 {
+            color: var(--accent-color);
+            font-size: 18px;
+            font-weight: 600;
+            margin: 18px 0 12px 0;
+        }
+
+        .content-section {
+            margin-bottom: 30px;
+        }
+
+        .content-section p {
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .intro-text {
+            font-size: 17px;
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 20px 0;
+        }
+
+        .content-section ul,
+        .content-section ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .content-section li {
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-left: 8px;
+        }
+
+        .content-section li strong {
+            color: var(--text-accent);
+        }
+
+        .content-section a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .content-section a:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .features-list {
+            list-style: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+
+        .features-list li {
+            background: var(--bg-score-board);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .features-list li:hover {
+            transform: translateX(5px);
+        }
+
+        @media (max-width: 768px) {
+            .seo-content {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .seo-content h1 {
+                font-size: 28px;
+            }
+
+            .seo-content h2 {
+                font-size: 24px;
+            }
+
+            .seo-content h3 {
+                font-size: 20px;
+            }
+
+             .seo-content h4 {
+                font-size: 17px;
+            }
+
+            .content-section p,
+            .content-section li {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .seo-content {
+                padding: 15px;
+                margin: 15px;
+            }
+
+            .seo-content h1 {
+                font-size: 24px;
+            }
+
+            .seo-content h2 {
+                font-size: 22px;
+            }
+
+            .seo-content h3 {
+                font-size: 18px;
+            }
+
+            .seo-content h4 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 data-lang-key="header">🎮 Block Blast</h1>
+        </div>
+
+        <div class="score-board">
+            <div class="score-item">
+                <div class="score-label" data-lang-key="scoreLabel">分数</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label" data-lang-key="bestScoreLabel">最高分</div>
+                <div class="score-value" id="best-score">0</div>
+            </div>
+             <div class="score-item">
+                <div class="score-label" data-lang-key="rankLabel">全球排名</div>
+                <div class="score-value" id="global-rank">--</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label" data-lang-key="percentileLabel">分位</div>
+                <div class="score-value" id="percentile">--</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="game-board"></div>
+
+        <div class="pieces-container" id="pieces-container"></div>
+
+        <div class="buttons">
+            <button class="btn-new-game" id="new-game-btn" data-lang-key="newGameBtn">新游戏</button>
+            <button id="sound-btn" onclick="toggleSound()">🔊 音效开</button>
+        </div>
+        
+        <div class="settings">
+            <div class="setting-row">
+                <span class="setting-label" data-lang-key="themeLabel">深色主题</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label" data-lang-key="languageLabel">English</span>
+                 <label class="toggle-switch">
+                    <input type="checkbox" id="lang-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEO Content Section -->
+    <article class="seo-content">
+        <h2>Spread the Fun, Share with Friends!</h2>
+        <p class="intro-text">
+            Welcome to <strong>block-blast.io</strong>, where puzzle enthusiasts and casual gamers alike gather to experience the thrill of Block Blast! Our platform offers a seamless, browser-based gaming experience that's both fun and challenging, perfect for anyone looking to test their skills.
+        </p>
+
+        <h1>Block Blast</h1>
+        
+        <section class="content-section">
+            <h2>Block Blast Overview</h2>
+            <p>
+                Block Blast is a captivating puzzle game that brings together strategic thinking and quick decision-making. Whether you're a seasoned puzzle master or just starting out, Block Blast offers endless entertainment right in your browser.
+            </p>
+
+            <h3>What is Block Blast Game?</h3>
+            <p>
+                Block Blast Game is a captivating puzzle game that challenges you to fit different block shapes onto a grid, clearing lines to score points. The game's simplicity is its charm, but don't be fooled—mastering Block Blast takes skill, strategy, and a sharp mind.
+            </p>
+
+            <h3>Gameplay Overview</h3>
+            <p>The rules of Block Blast are straightforward:</p>
+            <ul class="gameplay-list">
+                <li><strong>Place the Blocks:</strong> Drag and drop the blocks onto the grid.</li>
+                <li><strong>Clear the Board:</strong> Form complete rows or columns to clear them and score points.</li>
+                <li><strong>Stay in the Game:</strong> The game continues as long as you have space for new blocks. Game over happens when there's no more room to place the blocks.</li>
+            </ul>
+
+            <h3>How to Play Block Blast Online?</h3>
+            
+            <h4>Step by step to play Block Blast Online</h4>
+            <ol class="steps-list">
+                <li><strong>Visit the Website:</strong> Open your browser and go to <a href="https://block-blast.io/" target="_blank" rel="noopener">https://block-blast.io/</a></li>
+                <li><strong>Start the Game:</strong> Click the "OK, Play Now" button on the homepage to load the Block Blast Game.</li>
+                <li><strong>Place the Blocks:</strong> Drag and drop blocks onto the grid to fill rows or columns.</li>
+                <li><strong>Clear Lines:</strong> Complete a row or column to clear it and score points.</li>
+                <li><strong>Keep Playing:</strong> Continue placing blocks until no more can fit on the grid.</li>
+                <li><strong>Aim for High Scores:</strong> Strategize your moves to maximize your score.</li>
+                <li><strong>Replay:</strong> Click "Restart" to play again and improve your score.</li>
+            </ol>
+
+            <h4>Tips to Get a High Score in Block Blast</h4>
+            <ul class="tips-list">
+                <li><strong>Plan Ahead:</strong> Always look at the available blocks and think a few moves ahead.</li>
+                <li><strong>Clear Multiple Lines:</strong> Aim to clear more than one line at a time to maximize your score.</li>
+                <li><strong>Avoid Gaps:</strong> Try not to leave isolated gaps as they can make it difficult to place future blocks.</li>
+                <li><strong>Use Power-Ups:</strong> Take advantage of any in-game power-ups or bonuses that can help clear the board.</li>
+            </ul>
+        </section>
+
+        <section class="content-section">
+            <h2>Why Should You Play Block Blast on block-blast.io?</h2>
+            <ul class="features-list">
+                <li><strong>🎮 Instant Play:</strong> No downloads or installations required. Play directly in your browser at <a href="https://block-blast.io/" target="_blank" rel="noopener">block-blast.io</a> on your PC or Mobile Device.</li>
+                <li><strong>💰 Free Access:</strong> Enjoy unlimited access to Block Blast online without any charges.</li>
+                <li><strong>🎯 Engaging Gameplay:</strong> The game offers a perfect mix of fun and challenge, ideal for quick breaks or longer play sessions.</li>
+                <li><strong>📱 Mobile-Friendly:</strong> Play Block Blast Game on the go! Our website is optimized for mobile devices, ensuring a smooth gaming experience on any platform.</li>
+            </ul>
+        </section>
+
+        <section class="content-section">
+            <h2>Discuss: Block Blast</h2>
+            <p>
+                Join millions of players worldwide in the Block Blast community! Share your high scores, strategies, and compete on the global leaderboard. Whether you're aiming for the top 1% or just enjoying a casual gaming session, Block Blast offers something for everyone.
+            </p>
+            <p>
+                Start your Block Blast journey today and discover why it's become one of the most addictive puzzle games online. Can you reach the top of the leaderboard? 🏆
+            </p>
+        </section>
+    </article>
+
+    <div class="game-over" id="game-over">
+        <div class="game-over-content">
+            <h2 data-lang-key="gameOverTitle">游戏结束！</h2>
+            <p><span data-lang-key="finalScoreLabel">最终分数</span>: <span id="final-score">0</span></p>
+            <button class="btn-new-game" id="try-again-btn" data-lang-key="tryAgainBtn">再来一局</button>
+        </div>
+    </div>
+
+    <div class="combo-indicator" id="combo-indicator"></div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        let board = [];
+        let score = 0;
+        let bestScore = localStorage.getItem('blockBlastBestScore') || 0;
+        let currentPieces = [];
+        let selectedPiece = null;
+        let previewCells = [];
+        let isDragging = false;
+        let dragGhost = null;
+        let soundEnabled = true;
+        
+        // --- Internationalization (i18n) ---
+        const translations = {
+            'zh': { 'title': 'Block Blast 游戏', 'header': '🎮 Block Blast', 'scoreLabel': '分数', 'bestScoreLabel': '最高分', 'rankLabel': '全球排名', 'percentileLabel': '分位', 'newGameBtn': '新游戏', 'soundOn': '🔊 音效开', 'soundOff': '🔇 音效关', 'gameOverTitle': '游戏结束！', 'finalScoreLabel': '最终分数', 'tryAgainBtn': '再来一局', 'comboText': 'x 连击! 🎉', 'themeLabel': '深色主题', 'languageLabel': 'English' },
+            'en': { 'title': 'Block Blast Game', 'header': '🎮 Block Blast', 'scoreLabel': 'Score', 'bestScoreLabel': 'Best', 'rankLabel': 'Global Rank', 'percentileLabel': 'Top', 'newGameBtn': 'New Game', 'soundOn': '🔊 Sound On', 'soundOff': '🔇 Sound Off', 'gameOverTitle': 'Game Over!', 'finalScoreLabel': 'Final Score', 'tryAgainBtn': 'Play Again', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Dark Mode', 'languageLabel': '中文' }
+        };
+        let currentLang = 'zh';
+
+        // --- Ranking Simulation ---
+        const GLOBAL_PLAYERS = 10000000;
+        const TOP_SCORE_ESTIMATE = 45000; // Target score for top ranks, making it difficult
+        const DIFFICULTY_EXPONENT = 2.8; // Higher value = harder to rank up
+        const rankEl = document.getElementById('global-rank');
+        const percentileEl = document.getElementById('percentile');
+
+        // DOM Elements
+        const soundBtn = document.getElementById('sound-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const langToggle = document.getElementById('lang-toggle');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+
+        // Audio
+        let audioContext;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+            console.error('Web Audio API is not supported in this browser.');
+        }
+
+        const PIECE_SHAPES = [ [[1]], [[1, 1]], [[1], [1]], [[1, 1, 1]], [[1], [1], [1]], [[1, 1], [1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 1, 1], [0, 0, 1]], [[1, 0], [1, 1]], [[1, 1, 1, 1]], [[1], [1], [1], [1]], [[0, 1, 0], [1, 1, 1]] ];
+        
+        function playSound(frequency, duration, type = 'sine') {
+            if (!soundEnabled || !audioContext) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            gainNode.gain.setValueAtTime(audioContext.currentTime, 0);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playPlaceSound() { playSound(440, 0.1); }
+        function playClearSound() { playSound(660, 0.15); setTimeout(() => playSound(880, 0.15), 80); }
+        function playErrorSound() { playSound(220, 0.2, 'square'); }
+        function playComboSound(combo) { for (let i = 0; i < combo; i++) { setTimeout(() => { playSound(800 + i * 150, 0.12); }, i * 80); } }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('blockBlastLang', lang);
+            langToggle.checked = lang === 'en';
+            document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+            
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                if (translations[lang][key]) el.textContent = translations[lang][key];
+            });
+
+            document.title = translations[lang].title;
+            updateSoundButtonText();
+            updateGlobalRank(); // Re-render rank text if format changes (e.g. "Top")
+        }
+
+        function toggleLanguage() { setLanguage(currentLang === 'zh' ? 'en' : 'zh'); }
+        
+        function updateSoundButtonText() {
+            soundBtn.textContent = soundEnabled ? translations[currentLang].soundOn : translations[currentLang].soundOff;
+            soundBtn.classList.toggle('muted', !soundEnabled);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('blockBlastSound', soundEnabled);
+            updateSoundButtonText();
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('blockBlastTheme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+
+        function initGame() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            score = 0;
+            document.getElementById('best-score').textContent = bestScore;
+            
+            loadSettings();
+            
+            updateScore();
+            updateGlobalRank();
+            renderBoard();
+            generateNewPieces();
+        }
+
+        function loadSettings() {
+             const savedTheme = localStorage.getItem('blockBlastTheme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggle.checked = true;
+            } else {
+                 document.body.classList.remove('dark-theme');
+                 themeToggle.checked = false;
+            }
+
+            const savedLang = localStorage.getItem('blockBlastLang') || 'zh';
+            setLanguage(savedLang);
+
+            const savedSound = localStorage.getItem('blockBlastSound');
+            soundEnabled = savedSound === null ? true : savedSound === 'true';
+            updateSoundButtonText();
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('game-board');
+            boardElement.innerHTML = '';
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (board[i][j]) cell.classList.add('filled');
+                    cell.dataset.row = i; cell.dataset.col = j;
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function createPieceDOM(shape) {
+            const piece = document.createElement('div');
+            piece.className = 'piece';
+            piece.style.gridTemplateColumns = `repeat(${shape[0].length}, 1fr)`;
+            shape.forEach(row => row.forEach(cell => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'piece-cell';
+                if (cell) cellDiv.classList.add('filled');
+                piece.appendChild(cellDiv);
+            }));
+            return piece;
+        }
+
+        function generateNewPieces() {
+            currentPieces = [];
+            const piecesContainer = document.getElementById('pieces-container');
+            piecesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const shape = PIECE_SHAPES[Math.floor(Math.random() * PIECE_SHAPES.length)];
+                currentPieces.push({ shape, used: false, id: i });
+                const wrapper = document.createElement('div');
+                wrapper.className = 'piece-wrapper';
+                wrapper.dataset.id = i;
+                wrapper.addEventListener('mousedown', (e) => startDrag(e, i));
+                wrapper.addEventListener('touchstart', (e) => startDrag(e, i), { passive: false });
+                wrapper.appendChild(createPieceDOM(shape));
+                piecesContainer.appendChild(wrapper);
+            }
+        }
+
+        function startDrag(e, pieceId) {
+            if (currentPieces[pieceId].used) return;
+            e.preventDefault();
+            isDragging = true;
+            selectedPiece = pieceId;
+            const wrapper = document.querySelector(`[data-id="${pieceId}"]`);
+            wrapper.classList.add('dragging');
+            dragGhost = document.createElement('div');
+            dragGhost.className = 'drag-ghost';
+            dragGhost.appendChild(createPieceDOM(currentPieces[pieceId].shape));
+            document.body.appendChild(dragGhost);
+            document.addEventListener('mousemove', onDragMove); document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('mouseup', onDragEnd); document.addEventListener('touchend', onDragEnd);
+            const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+            updateDragGhostPosition(clientX, clientY);
+        }
+
+        function updateDragGhostPosition(clientX, clientY) {
+            if (!dragGhost) return;
+            const rect = dragGhost.getBoundingClientRect();
+            dragGhost.style.transform = `translate(${(clientX - rect.width / 2)}px, ${(clientY - rect.height / 2)}px)`;
+        }
+
+        function onDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+            updateDragGhostPosition(clientX, clientY);
+            dragGhost.style.display = 'none';
+            const cell = document.elementsFromPoint(clientX, clientY).find(el => el.classList.contains('cell'));
+            dragGhost.style.display = 'block';
+            clearPreview();
+            if (cell) showPreview(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+        }
+
+        function onDragEnd(e) {
+            if (!isDragging) return;
+            const clientX = e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
+            dragGhost.style.display = 'none';
+            const cell = document.elementsFromPoint(clientX, clientY).find(el => el.classList.contains('cell'));
+            if (cell) placePiece(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+            else playErrorSound();
+
+            const wrapper = document.querySelector(`[data-id="${selectedPiece}"]`);
+            if (wrapper) wrapper.classList.remove('dragging');
+            if (dragGhost) dragGhost.remove();
+            dragGhost = null;
+            clearPreview();
+            isDragging = false; selectedPiece = null;
+            document.removeEventListener('mousemove', onDragMove); document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd); document.removeEventListener('touchend', onDragEnd);
+        }
+
+        function showPreview(row, col) {
+            clearPreview();
+            if (selectedPiece === null) return;
+            const shape = currentPieces[selectedPiece].shape;
+            const valid = canPlacePiece(row, col, shape);
+            previewCells = [];
+            for (let i = 0; i < shape.length; i++) for (let j = 0; j < shape[i].length; j++) if (shape[i][j]) {
+                const r = row + i, c = col + j;
+                if (r < BOARD_SIZE && c < BOARD_SIZE) {
+                    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                    if (cell) { cell.classList.add(valid ? 'preview' : 'invalid'); previewCells.push(cell); }
+                }
+            }
+        }
+
+        function clearPreview() { previewCells.forEach(cell => cell.classList.remove('preview', 'invalid')); previewCells = []; }
+
+        function canPlacePiece(row, col, shape) {
+            for (let i = 0; i < shape.length; i++) for (let j = 0; j < shape[i].length; j++) if (shape[i][j]) {
+                const r = row + i, c = col + j;
+                if (r >= BOARD_SIZE || c >= BOARD_SIZE || board[r][c]) return false;
+            }
+            return true;
+        }
+
+        function placePiece(row, col) {
+            const shape = currentPieces[selectedPiece].shape;
+            if (!canPlacePiece(row, col, shape)) { playErrorSound(); return; }
+            playPlaceSound();
+            for (let i = 0; i < shape.length; i++) for (let j = 0; j < shape[i].length; j++) if (shape[i][j]) board[row + i][col + j] = 1;
+
+            currentPieces[selectedPiece].used = true;
+            document.querySelector(`[data-id="${selectedPiece}"]`).classList.add('used');
+            score += shape.flat().filter(x => x).length;
+            updateScore();
+            renderBoard();
+            selectedPiece = null; clearPreview();
+            
+            setTimeout(() => {
+                const linesCleared = clearLines();
+                if (linesCleared > 0) {
+                    playClearSound();
+                    if (linesCleared > 1) { playComboSound(linesCleared); showCombo(linesCleared); }
+                    score += linesCleared * 100 + (linesCleared - 1) * 50; // Combo bonus
+                    updateScore();
+                }
+                if (currentPieces.every(p => p.used)) setTimeout(() => generateNewPieces(), 200);
+                setTimeout(() => { if (!hasValidMoves()) gameOver(); }, 300);
+            }, 100);
+        }
+
+        function clearLines() {
+            let linesToClear = { rows: [], cols: [] };
+            for(let i=0; i<BOARD_SIZE; i++) {
+                if(board[i].every(cell => cell === 1)) linesToClear.rows.push(i);
+                if(board.every(row => row[i] === 1)) linesToClear.cols.push(i);
+            }
+            
+            const cellsToClear = new Set();
+            linesToClear.rows.forEach(i => { for(let j=0; j<BOARD_SIZE; j++) cellsToClear.add(`${i},${j}`); });
+            linesToClear.cols.forEach(j => { for(let i=0; i<BOARD_SIZE; i++) cellsToClear.add(`${i},${j}`); });
+
+            cellsToClear.forEach(pos => {
+                const [i, j] = pos.split(',');
+                document.querySelector(`[data-row="${i}"][data-col="${j}"]`)?.classList.add('clearing');
+            });
+
+            if (cellsToClear.size > 0) setTimeout(() => {
+                cellsToClear.forEach(pos => { const [i, j] = pos.split(','); board[i][j] = 0; });
+                renderBoard();
+            }, 450);
+
+            return linesToClear.rows.length + linesToClear.cols.length;
+        }
+
+        function showCombo(combo) {
+            const indicator = document.getElementById('combo-indicator');
+            indicator.textContent = `${combo}${translations[currentLang].comboText}`;
+            indicator.style.display = 'block';
+            setTimeout(() => { indicator.style.display = 'none'; }, 1000);
+        }
+
+        function hasValidMoves() {
+            const availablePieces = currentPieces.filter(p => !p.used);
+            if (availablePieces.length === 0) return true; // Will generate new pieces
+            for (let piece of availablePieces) {
+                for (let i = 0; i < BOARD_SIZE; i++) for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (canPlacePiece(i, j, piece.shape)) return true;
+                }
+            }
+            return false;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('blockBlastBestScore', bestScore);
+                document.getElementById('best-score').textContent = bestScore;
+                updateGlobalRank();
+            }
+        }
+
+        function updateGlobalRank() {
+            if (bestScore == 0) {
+                rankEl.textContent = '--';
+                percentileEl.textContent = '--';
+                return;
+            }
+            const scoreRatio = Math.min(bestScore / TOP_SCORE_ESTIMATE, 1.0);
+            const rank = Math.max(1, Math.floor(GLOBAL_PLAYERS * (1 - Math.pow(scoreRatio, DIFFICULTY_EXPONENT))));
+            const percentile = ((GLOBAL_PLAYERS - rank) / GLOBAL_PLAYERS) * 100;
+
+            rankEl.textContent = `#${rank.toLocaleString(currentLang === 'en' ? 'en-US' : 'zh-CN')}`;
+            const topPercent = 100 - percentile;
+            if(currentLang === 'en') {
+                 percentileEl.textContent = `${topPercent < 0.01 ? '0.01' : topPercent.toFixed(2)}%`;
+            } else {
+                 percentileEl.textContent = `前${topPercent < 0.01 ? '0.01' : topPercent.toFixed(2)}%`;
+            }
+        }
+        
+        function gameOver() {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over').style.display = 'flex';
+            playSound(300, 0.4, 'sawtooth');
+            setTimeout(()=>playSound(200, 0.5, 'sawtooth'), 100);
+        }
+
+        function newGame() {
+            document.getElementById('game-over').style.display = 'none';
+            initGame();
+        }
+        
+        // Event Listeners
+        themeToggle.addEventListener('change', toggleTheme);
+        langToggle.addEventListener('change', toggleLanguage);
+        newGameBtn.addEventListener('click', newGame);
+        tryAgainBtn.addEventListener('click', newGame);
+
+        // First Load
+        initGame();
+    </script>
+</body>
+</html>
