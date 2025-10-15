@@ -295,17 +295,18 @@ function placePiece(row, col) {
             updateScore();
         }
         
-        // [FIX] Check game over logic after line clearing
-        const allUsed = currentPieces.every(p => p.used);
-        if (allUsed) {
-            // Generate new pieces (will check game over inside generateNewPieces)
-            setTimeout(() => generateNewPieces(), 200);
-        } else {
-            // Check game over if there are still pieces but no valid moves
-            setTimeout(() => {
+        // [FIX] Check game over AFTER line clearing completes (wait for animation + board update)
+        const clearDelay = linesCleared > 0 ? 500 : 50; // Wait for clearing animation if needed
+        setTimeout(() => {
+            const allUsed = currentPieces.every(p => p.used);
+            if (allUsed) {
+                // Generate new pieces (will check game over inside generateNewPieces)
+                setTimeout(() => generateNewPieces(), 150);
+            } else {
+                // Check game over if there are still pieces but no valid moves
                 if (!hasValidMoves()) gameOver();
-            }, 100);
-        }
+            }
+        }, clearDelay);
     }, 100);
 }
 
