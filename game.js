@@ -34,6 +34,18 @@ const translations = {
     'ar': { 'title': 'لعبة Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'النقاط', 'bestScoreLabel': 'الأفضل', 'rankLabel': 'الترتيب العالمي', 'percentileLabel': 'الأعلى', 'newGameBtn': 'لعبة جديدة', 'soundOn': '🔊 الصوت مفعل', 'soundOff': '🔇 الصوت مغلق', 'gameOverTitle': 'انتهت اللعبة!', 'finalScoreLabel': 'النقاط النهائية', 'tryAgainBtn': 'العب مرة أخرى', 'comboText': 'x كومبو! 🎉', 'themeLabel': 'الوضع الداكن', 'languageLabel': 'اللغة', 'shareTwitter': 'مشاركة على X', 'copyShare': 'نسخ النص', 'shareText': 'حصلت على {score} نقطة في Block Blast، المرتبة {rank} عالميًا! هل يمكنك التغلب علي؟ 🎮', 'copied': 'تم النسخ!' }
 };
 
+// ==================== Locale Mapping ====================
+const LOCALE_MAP = {
+    'zh-CN': 'zh-CN', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
+    'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'ru': 'ru-RU', 'ar': 'ar-SA'
+};
+
+const LANG_MAP = {
+    'zh': 'zh-CN', 'zh-cn': 'zh-CN', 'zh-tw': 'zh-CN', 'zh-hk': 'zh-CN',
+    'en': 'en', 'es': 'es', 'fr': 'fr', 'de': 'de',
+    'ja': 'ja', 'ko': 'ko', 'pt': 'pt', 'ru': 'ru', 'ar': 'ar'
+};
+
 // ==================== Game State ====================
 let board = [];
 let score = 0;
@@ -46,17 +58,26 @@ let dragGhost = null;
 let soundEnabled = true;
 let currentLang = detectBrowserLanguage();
 
-// ==================== DOM Elements ====================
-const rankEl = document.getElementById('global-rank');
-const percentileEl = document.getElementById('percentile');
-const soundBtn = document.getElementById('sound-btn');
-const themeToggle = document.getElementById('theme-toggle');
-const langSelect = document.getElementById('lang-select');
-const newGameBtn = document.getElementById('new-game-btn');
-const tryAgainBtn = document.getElementById('try-again-btn');
-const shareTwitterBtn = document.getElementById('share-twitter-btn');
-const copyShareBtn = document.getElementById('copy-share-btn');
-const rankDisplayEl = document.getElementById('rank-display');
+// ==================== DOM Elements (Cached) ====================
+const DOM = {
+    rankEl: document.getElementById('global-rank'),
+    percentileEl: document.getElementById('percentile'),
+    soundBtn: document.getElementById('sound-btn'),
+    themeToggle: document.getElementById('theme-toggle'),
+    langSelect: document.getElementById('lang-select'),
+    newGameBtn: document.getElementById('new-game-btn'),
+    tryAgainBtn: document.getElementById('try-again-btn'),
+    shareTwitterBtn: document.getElementById('share-twitter-btn'),
+    copyShareBtn: document.getElementById('copy-share-btn'),
+    rankDisplayEl: document.getElementById('rank-display'),
+    gameBoard: document.getElementById('game-board'),
+    piecesContainer: document.getElementById('pieces-container'),
+    score: document.getElementById('score'),
+    bestScore: document.getElementById('best-score'),
+    finalScore: document.getElementById('final-score'),
+    gameOverModal: document.getElementById('game-over'),
+    comboIndicator: document.getElementById('combo-indicator')
+};
 
 // ==================== Audio ====================
 let audioContext;
@@ -99,13 +120,7 @@ function detectBrowserLanguage() {
     if (translations[langCode]) return langCode;
     
     const baseLang = langCode.split('-')[0];
-    const langMap = {
-        'zh': 'zh-CN', 'zh-cn': 'zh-CN', 'zh-tw': 'zh-CN', 'zh-hk': 'zh-CN',
-        'en': 'en', 'es': 'es', 'fr': 'fr', 'de': 'de',
-        'ja': 'ja', 'ko': 'ko', 'pt': 'pt', 'ru': 'ru', 'ar': 'ar'
-    };
-    
-    return langMap[langCode] || langMap[baseLang] || 'en';
+    return LANG_MAP[langCode] || LANG_MAP[baseLang] || 'en';
 }
 
 function setLanguage(lang) {
@@ -114,14 +129,9 @@ function setLanguage(lang) {
     
     currentLang = lang;
     localStorage.setItem('blockBlastLang', lang);
-    langSelect.value = lang;
+    DOM.langSelect.value = lang;
     
-    const htmlLangMap = {
-        'zh-CN': 'zh-CN', 'en': 'en', 'es': 'es', 'fr': 'fr', 'de': 'de',
-        'ja': 'ja', 'ko': 'ko', 'pt': 'pt', 'ru': 'ru', 'ar': 'ar'
-    };
-    document.documentElement.lang = htmlLangMap[lang] || 'en';
-    
+    document.documentElement.lang = LOCALE_MAP[lang] || 'en';
     document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
     
     document.querySelectorAll('[data-lang-key]').forEach(el => {
@@ -136,8 +146,8 @@ function setLanguage(lang) {
 
 // ==================== Settings ====================
 function updateSoundButtonText() {
-    soundBtn.textContent = soundEnabled ? translations[currentLang].soundOn : translations[currentLang].soundOff;
-    soundBtn.classList.toggle('muted', !soundEnabled);
+    DOM.soundBtn.textContent = soundEnabled ? translations[currentLang].soundOn : translations[currentLang].soundOff;
+    DOM.soundBtn.classList.toggle('muted', !soundEnabled);
 }
 
 function toggleSound() {
@@ -155,10 +165,10 @@ function loadSettings() {
     const savedTheme = localStorage.getItem('blockBlastTheme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme');
-        themeToggle.checked = true;
+        DOM.themeToggle.checked = true;
     } else {
         document.body.classList.remove('dark-theme');
-        themeToggle.checked = false;
+        DOM.themeToggle.checked = false;
     }
 
     const savedLang = localStorage.getItem('blockBlastLang');
@@ -175,8 +185,7 @@ function loadSettings() {
 
 // ==================== Rendering ====================
 function renderBoard() {
-    const boardElement = document.getElementById('game-board');
-    boardElement.innerHTML = '';
+    DOM.gameBoard.innerHTML = '';
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const cell = document.createElement('div');
@@ -184,7 +193,7 @@ function renderBoard() {
             if (board[i][j]) cell.classList.add('filled');
             cell.dataset.row = i;
             cell.dataset.col = j;
-            boardElement.appendChild(cell);
+            DOM.gameBoard.appendChild(cell);
         }
     }
 }
@@ -203,17 +212,15 @@ function createPieceDOM(shape) {
 }
 
 function showCombo(combo) {
-    const indicator = document.getElementById('combo-indicator');
-    indicator.textContent = `${combo}${translations[currentLang].comboText}`;
-    indicator.style.display = 'block';
-    setTimeout(() => { indicator.style.display = 'none'; }, 1000);
+    DOM.comboIndicator.textContent = `${combo}${translations[currentLang].comboText}`;
+    DOM.comboIndicator.style.display = 'block';
+    setTimeout(() => { DOM.comboIndicator.style.display = 'none'; }, 1000);
 }
 
 // ==================== Game Logic ====================
 function generateNewPieces() {
     currentPieces = [];
-    const piecesContainer = document.getElementById('pieces-container');
-    piecesContainer.innerHTML = '';
+    DOM.piecesContainer.innerHTML = '';
     
     for (let i = 0; i < 3; i++) {
         const shape = PIECE_SHAPES[Math.floor(Math.random() * PIECE_SHAPES.length)];
@@ -224,10 +231,9 @@ function generateNewPieces() {
         wrapper.addEventListener('mousedown', (e) => startDrag(e, i));
         wrapper.addEventListener('touchstart', (e) => startDrag(e, i), { passive: false });
         wrapper.appendChild(createPieceDOM(shape));
-        piecesContainer.appendChild(wrapper);
+        DOM.piecesContainer.appendChild(wrapper);
     }
     
-    // [FIX] Check for game over after generating new pieces
     setTimeout(() => {
         if (!hasValidMoves()) {
             gameOver();
@@ -449,6 +455,35 @@ function clearPreview() {
     previewCells = [];
 }
 
+// ==================== Game Over ====================
+function gameOver() {
+    DOM.finalScore.textContent = score;
+    
+    const rank = calculateCurrentRank();
+    if (rank) {
+        const formattedRank = `#${rank.toLocaleString(LOCALE_MAP[currentLang] || 'en-US')}`;
+        const rankLabels = {
+            'zh-CN': `全球排名: ${formattedRank}`,
+            'en': `Global Rank: ${formattedRank}`,
+            'es': `Ranking Global: ${formattedRank}`,
+            'fr': `Classement Mondial: ${formattedRank}`,
+            'de': `Weltweiter Rang: ${formattedRank}`,
+            'ja': `世界ランキング: ${formattedRank}`,
+            'ko': `글로벌 순위: ${formattedRank}`,
+            'pt': `Ranking Global: ${formattedRank}`,
+            'ru': `Мировой Рейтинг: ${formattedRank}`,
+            'ar': `الترتيب العالمي: ${formattedRank}`
+        };
+        DOM.rankDisplayEl.textContent = rankLabels[currentLang] || rankLabels['en'];
+    } else {
+        DOM.rankDisplayEl.textContent = '';
+    }
+    
+    DOM.gameOverModal.style.display = 'flex';
+    playSound(300, 0.4, 'sawtooth');
+    setTimeout(()=>playSound(200, 0.5, 'sawtooth'), 100);
+}
+
 // ==================== Normal Distribution Helper ====================
 function erf(x) {
     const sign = x >= 0 ? 1 : -1;
@@ -469,64 +504,54 @@ function normalCDF(x, mean, stdDev) {
 }
 
 // ==================== Score & Ranking ====================
+function calculateRankInfo(points) {
+    if (points === 0) return null;
+    const percentile = normalCDF(points, MEAN_SCORE, STD_DEV);
+    const rank = Math.max(1, Math.floor(GLOBAL_PLAYERS * (1 - percentile)));
+    const topPercent = (1 - percentile) * 100;
+    const percentText = topPercent < 0.01 ? '0.01' : topPercent.toFixed(2);
+    return { rank, percentile, topPercent, percentText };
+}
+
 function updateScore() {
-    document.getElementById('score').textContent = score;
+    DOM.score.textContent = score;
     if (score > bestScore) {
         bestScore = score;
         localStorage.setItem('blockBlastBestScore', bestScore);
-        document.getElementById('best-score').textContent = bestScore;
+        DOM.bestScore.textContent = bestScore;
         updateGlobalRank();
     }
 }
 
 function updateGlobalRank() {
     if (bestScore == 0) {
-        rankEl.textContent = '--';
-        percentileEl.textContent = '--';
+        DOM.rankEl.textContent = '--';
+        DOM.percentileEl.textContent = '--';
         return;
     }
     
-    // Use normal distribution: most players at median, fewer at extremes
-    const percentile = normalCDF(bestScore, MEAN_SCORE, STD_DEV);
-    const rank = Math.max(1, Math.floor(GLOBAL_PLAYERS * (1 - percentile)));
-
-    const localeMap = {
-        'zh-CN': 'zh-CN', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
-        'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'ru': 'ru-RU', 'ar': 'ar-SA'
-    };
-    rankEl.textContent = `#${rank.toLocaleString(localeMap[currentLang] || 'en-US')}`;
-    
-    const topPercent = (1 - percentile) * 100;
-    const percentText = topPercent < 0.01 ? '0.01' : topPercent.toFixed(2);
+    const rankInfo = calculateRankInfo(bestScore);
+    DOM.rankEl.textContent = `#${rankInfo.rank.toLocaleString(LOCALE_MAP[currentLang] || 'en-US')}`;
     
     if (currentLang === 'zh-CN') {
-        percentileEl.textContent = `前${percentText}%`;
+        DOM.percentileEl.textContent = `前${rankInfo.percentText}%`;
     } else {
-        percentileEl.textContent = `${percentText}%`;
+        DOM.percentileEl.textContent = `${rankInfo.percentText}%`;
     }
 }
 
 // ==================== Share Functions ====================
 function calculateCurrentRank() {
     if (score === 0) return null;
-    
-    // Use normal distribution for realistic player distribution
-    const percentile = normalCDF(score, MEAN_SCORE, STD_DEV);
-    const rank = Math.max(1, Math.floor(GLOBAL_PLAYERS * (1 - percentile)));
-    
-    return rank;
+    const rankInfo = calculateRankInfo(score);
+    return rankInfo ? rankInfo.rank : null;
 }
 
 function generateShareText() {
     const rank = calculateCurrentRank();
     if (!rank) return '';
     
-    const localeMap = {
-        'zh-CN': 'zh-CN', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
-        'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'ru': 'ru-RU', 'ar': 'ar-SA'
-    };
-    
-    const formattedRank = `#${rank.toLocaleString(localeMap[currentLang] || 'en-US')}`;
+    const formattedRank = `#${rank.toLocaleString(LOCALE_MAP[currentLang] || 'en-US')}`;
     const shareTemplate = translations[currentLang].shareText;
     
     return shareTemplate
@@ -547,13 +572,13 @@ function copyShareText() {
     if (!text) return;
     
     navigator.clipboard.writeText(text).then(() => {
-        const originalText = copyShareBtn.querySelector('span').textContent;
-        copyShareBtn.classList.add('copied');
-        copyShareBtn.querySelector('span').textContent = translations[currentLang].copied;
+        const originalText = DOM.copyShareBtn.querySelector('span').textContent;
+        DOM.copyShareBtn.classList.add('copied');
+        DOM.copyShareBtn.querySelector('span').textContent = translations[currentLang].copied;
         
         setTimeout(() => {
-            copyShareBtn.classList.remove('copied');
-            copyShareBtn.querySelector('span').textContent = originalText;
+            DOM.copyShareBtn.classList.remove('copied');
+            DOM.copyShareBtn.querySelector('span').textContent = originalText;
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy:', err);
@@ -565,7 +590,7 @@ function copyShareText() {
 function initGame() {
     board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
     score = 0;
-    document.getElementById('best-score').textContent = bestScore;
+    DOM.bestScore.textContent = bestScore;
     
     loadSettings();
     updateScore();
@@ -574,61 +599,22 @@ function initGame() {
     generateNewPieces();
 }
 
-function gameOver() {
-    document.getElementById('final-score').textContent = score;
-    
-    // Display rank information
-    const rank = calculateCurrentRank();
-    if (rank) {
-        const localeMap = {
-            'zh-CN': 'zh-CN', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
-            'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'ru': 'ru-RU', 'ar': 'ar-SA'
-        };
-        const formattedRank = `#${rank.toLocaleString(localeMap[currentLang] || 'en-US')}`;
-        
-        if (currentLang === 'zh-CN') {
-            rankDisplayEl.textContent = `全球排名: ${formattedRank}`;
-        } else if (currentLang === 'en') {
-            rankDisplayEl.textContent = `Global Rank: ${formattedRank}`;
-        } else if (currentLang === 'es') {
-            rankDisplayEl.textContent = `Ranking Global: ${formattedRank}`;
-        } else if (currentLang === 'fr') {
-            rankDisplayEl.textContent = `Classement Mondial: ${formattedRank}`;
-        } else if (currentLang === 'de') {
-            rankDisplayEl.textContent = `Weltweiter Rang: ${formattedRank}`;
-        } else if (currentLang === 'ja') {
-            rankDisplayEl.textContent = `世界ランキング: ${formattedRank}`;
-        } else if (currentLang === 'ko') {
-            rankDisplayEl.textContent = `글로벌 순위: ${formattedRank}`;
-        } else if (currentLang === 'pt') {
-            rankDisplayEl.textContent = `Ranking Global: ${formattedRank}`;
-        } else if (currentLang === 'ru') {
-            rankDisplayEl.textContent = `Мировой Рейтинг: ${formattedRank}`;
-        } else if (currentLang === 'ar') {
-            rankDisplayEl.textContent = `الترتيب العالمي: ${formattedRank}`;
-        }
-    } else {
-        rankDisplayEl.textContent = '';
-    }
-    
-    document.getElementById('game-over').style.display = 'flex';
-    playSound(300, 0.4, 'sawtooth');
-    setTimeout(()=>playSound(200, 0.5, 'sawtooth'), 100);
-}
-
 function newGame() {
-    document.getElementById('game-over').style.display = 'none';
+    DOM.gameOverModal.style.display = 'none';
     initGame();
 }
 
 // ==================== Event Listeners ====================
-themeToggle.addEventListener('change', toggleTheme);
-langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
-soundBtn.addEventListener('click', toggleSound);
-newGameBtn.addEventListener('click', newGame);
-tryAgainBtn.addEventListener('click', newGame);
-shareTwitterBtn.addEventListener('click', shareToTwitter);
-copyShareBtn.addEventListener('click', copyShareText);
+function attachEventListeners() {
+    DOM.themeToggle.addEventListener('change', toggleTheme);
+    DOM.langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+    DOM.soundBtn.addEventListener('click', toggleSound);
+    DOM.newGameBtn.addEventListener('click', newGame);
+    DOM.tryAgainBtn.addEventListener('click', newGame);
+    DOM.shareTwitterBtn.addEventListener('click', shareToTwitter);
+    DOM.copyShareBtn.addEventListener('click', copyShareText);
+}
 
 // ==================== Initialize ====================
+attachEventListeners();
 initGame();

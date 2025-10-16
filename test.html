@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast - 测试页面</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 data-lang-key="header">🎮 Block Blast</h1>
+        </div>
+
+        <div class="score-board">
+            <div class="score-item">
+                <div class="score-label" data-lang-key="scoreLabel">分数</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label" data-lang-key="bestScoreLabel">最高分</div>
+                <div class="score-value" id="best-score">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label" data-lang-key="rankLabel">全球排名</div>
+                <div class="score-value" id="global-rank">--</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label" data-lang-key="percentileLabel">分位</div>
+                <div class="score-value" id="percentile">--</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="game-board"></div>
+
+        <div class="pieces-container" id="pieces-container"></div>
+
+        <div class="buttons">
+            <button class="btn-new-game" id="new-game-btn" data-lang-key="newGameBtn">新游戏</button>
+            <button id="sound-btn">🔊 音效开</button>
+        </div>
+        
+        <div class="settings">
+            <div class="setting-row">
+                <span class="setting-label" data-lang-key="themeLabel">深色主题</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label" data-lang-key="languageLabel">Language</span>
+                <select id="lang-select" style="padding: 6px 12px; border-radius: 8px; border: none; background: var(--bg-cell); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: all 0.2s;">
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="pt">Português</option>
+                    <option value="ru">Русский</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-over" id="game-over">
+        <div class="game-over-content">
+            <h2 data-lang-key="gameOverTitle">游戏结束！</h2>
+            <p><span data-lang-key="finalScoreLabel">最终分数</span>: <span id="final-score">0</span></p>
+            <p class="rank-display" id="rank-display"></p>
+            
+            <div class="share-buttons">
+                <button class="btn-share btn-twitter" id="share-twitter-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span data-lang-key="shareTwitter">分享到 X</span>
+                </button>
+                <button class="btn-share btn-copy" id="copy-share-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span data-lang-key="copyShare">复制分享文案</span>
+                </button>
+            </div>
+            
+            <button class="btn-new-game" id="try-again-btn" data-lang-key="tryAgainBtn">再来一局</button>
+        </div>
+    </div>
+
+    <div class="combo-indicator" id="combo-indicator"></div>
+
+    <script src="game.js"></script>
+    <script>
+        // 测试脚本
+        console.log('✓ 游戏初始化成功');
+        console.log('✓ DOM 缓存对象:', typeof DOM !== 'undefined' ? '已创建' : '未创建');
+        console.log('✓ 语言映射表:', typeof LOCALE_MAP !== 'undefined' ? '已创建' : '未创建');
+        console.log('✓ 当前语言:', currentLang);
+        console.log('✓ 最佳分数:', bestScore);
+    </script>
+</body>
+</html>
