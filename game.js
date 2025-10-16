@@ -1,7 +1,7 @@
 // ==================== Constants ====================
 const BOARD_SIZE = 8;
 const GLOBAL_PLAYERS = 10000000;
-const TOP_SCORE_ESTIMATE = 10000;
+const TOP_SCORE_ESTIMATE = 45000;
 const MEAN_SCORE = TOP_SCORE_ESTIMATE * 0.45; // 20250, median player score
 const STD_DEV = TOP_SCORE_ESTIMATE * 0.18; // 8100, standard deviation
 
