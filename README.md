@@ -1,1 +1,1 @@
-http://blockblast.online/
+https://blockblast.online/

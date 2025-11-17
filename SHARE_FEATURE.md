@@ -26,14 +26,14 @@
 ```
 我在 Block Blast 获得了 {score} 分，全球排名 {rank}！你能超越我吗？🎮
 
-https://block-blast.io/
+https://blockblast.online/
 ```
 
 #### English (en)
 ```
 I scored {score} points on Block Blast, ranked {rank} globally! Can you beat me? 🎮
 
-https://block-blast.io/
+https://blockblast.online/
 ```
 
 #### 其他语言
@@ -104,7 +104,7 @@ function generateShareText() {
     
     return shareTemplate
         .replace('{score}', score)
-        .replace('{rank}', formattedRank) + '\n\nhttps://block-blast.io/';
+        .replace('{rank}', formattedRank) + '\n\nhttps://blockblast.online/';
 }
 ```
 

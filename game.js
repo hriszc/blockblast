@@ -589,7 +589,7 @@ function generateShareText() {
     
     return shareTemplate
         .replace('{score}', score)
-        .replace('{rank}', formattedRank) + '\n\nhttps://block-blast.io/';
+        .replace('{rank}', formattedRank) + '\n\nhttps://blockblast.online/';
 }
 
 function shareToTwitter() {
