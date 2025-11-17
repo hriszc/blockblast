@@ -57,6 +57,8 @@ let isDragging = false;
 let dragGhost = null;
 let soundEnabled = true;
 let currentLang = detectBrowserLanguage();
+let boardCells = [];
+let pieceWrappers = [];
 
 // ==================== DOM Elements (Cached) ====================
 const DOM = {
@@ -184,16 +186,29 @@ function loadSettings() {
 }
 
 // ==================== Rendering ====================
-function renderBoard() {
+function createBoardCells() {
     DOM.gameBoard.innerHTML = '';
+    boardCells = [];
     for (let i = 0; i < BOARD_SIZE; i++) {
+        boardCells[i] = [];
         for (let j = 0; j < BOARD_SIZE; j++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
-            if (board[i][j]) cell.classList.add('filled');
             cell.dataset.row = i;
             cell.dataset.col = j;
             DOM.gameBoard.appendChild(cell);
+            boardCells[i][j] = cell;
+        }
+    }
+}
+
+function renderBoard() {
+    if (!boardCells.length) {
+        createBoardCells();
+    }
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            boardCells[i][j].classList.toggle('filled', !!board[i][j]);
         }
     }
 }
@@ -218,20 +233,38 @@ function showCombo(combo) {
 }
 
 // ==================== Game Logic ====================
-function generateNewPieces() {
-    currentPieces = [];
-    DOM.piecesContainer.innerHTML = '';
-    
+function handlePiecePointerStart(e) {
+    const id = parseInt(e.currentTarget.dataset.id, 10);
+    if (Number.isInteger(id)) {
+        startDrag(e, id);
+    }
+}
+
+function ensurePieceWrappers() {
+    if (pieceWrappers.length) return;
     for (let i = 0; i < 3; i++) {
-        const shape = PIECE_SHAPES[Math.floor(Math.random() * PIECE_SHAPES.length)];
-        currentPieces.push({ shape, used: false, id: i });
         const wrapper = document.createElement('div');
         wrapper.className = 'piece-wrapper';
         wrapper.dataset.id = i;
-        wrapper.addEventListener('mousedown', (e) => startDrag(e, i));
-        wrapper.addEventListener('touchstart', (e) => startDrag(e, i), { passive: false });
-        wrapper.appendChild(createPieceDOM(shape));
+        wrapper.addEventListener('mousedown', handlePiecePointerStart);
+        wrapper.addEventListener('touchstart', handlePiecePointerStart, { passive: false });
         DOM.piecesContainer.appendChild(wrapper);
+        pieceWrappers.push(wrapper);
+    }
+}
+
+function generateNewPieces() {
+    ensurePieceWrappers();
+    currentPieces = [];
+    
+    for (let i = 0; i < pieceWrappers.length; i++) {
+        const shape = PIECE_SHAPES[Math.floor(Math.random() * PIECE_SHAPES.length)];
+        currentPieces.push({ shape, used: false, id: i });
+        const wrapper = pieceWrappers[i];
+        wrapper.dataset.id = i;
+        wrapper.classList.remove('used');
+        wrapper.innerHTML = '';
+        wrapper.appendChild(createPieceDOM(shape));
     }
     
     setTimeout(() => {
@@ -280,9 +313,9 @@ function placePiece(row, col) {
             if (shape[i][j]) board[row + i][col + j] = 1;
         }
     }
-
+    
     currentPieces[selectedPiece].used = true;
-    document.querySelector(`[data-id="${selectedPiece}"]`).classList.add('used');
+    pieceWrappers[selectedPiece]?.classList.add('used');
     score += shape.flat().filter(x => x).length;
     updateScore();
     renderBoard();
@@ -334,7 +367,7 @@ function clearLines() {
 
     cellsToClear.forEach(pos => {
         const [i, j] = pos.split(',');
-        document.querySelector(`[data-row="${i}"][data-col="${j}"]`)?.classList.add('clearing');
+        boardCells[i]?.[j]?.classList.add('clearing');
     });
 
     if (cellsToClear.size > 0) {
@@ -342,6 +375,7 @@ function clearLines() {
             cellsToClear.forEach(pos => {
                 const [i, j] = pos.split(',');
                 board[i][j] = 0;
+                boardCells[i]?.[j]?.classList.remove('clearing');
             });
             renderBoard();
         }, 450);
@@ -357,7 +391,7 @@ function startDrag(e, pieceId) {
     isDragging = true;
     selectedPiece = pieceId;
     
-    const wrapper = document.querySelector(`[data-id="${pieceId}"]`);
+    const wrapper = pieceWrappers[pieceId];
     wrapper.classList.add('dragging');
     
     dragGhost = document.createElement('div');
@@ -399,6 +433,7 @@ function onDragMove(e) {
 
 function onDragEnd(e) {
     if (!isDragging) return;
+    const lastSelected = selectedPiece;
     
     const clientX = e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX;
     const clientY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
@@ -412,7 +447,7 @@ function onDragEnd(e) {
         playErrorSound();
     }
 
-    const wrapper = document.querySelector(`[data-id="${selectedPiece}"]`);
+    const wrapper = (lastSelected != null) ? pieceWrappers[lastSelected] : null;
     if (wrapper) wrapper.classList.remove('dragging');
     if (dragGhost) dragGhost.remove();
     dragGhost = null;
@@ -438,12 +473,10 @@ function showPreview(row, col) {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j]) {
                 const r = row + i, c = col + j;
-                if (r < BOARD_SIZE && c < BOARD_SIZE) {
-                    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
-                    if (cell) {
-                        cell.classList.add(valid ? 'preview' : 'invalid');
-                        previewCells.push(cell);
-                    }
+                if (r < BOARD_SIZE && c < BOARD_SIZE && boardCells[r]?.[c]) {
+                    const cell = boardCells[r][c];
+                    cell.classList.add(valid ? 'preview' : 'invalid');
+                    previewCells.push(cell);
                 }
             }
         }
