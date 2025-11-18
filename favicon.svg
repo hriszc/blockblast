@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0A84FF"/>
+            <stop offset="100%" stop-color="#34C5FF"/>
+        </linearGradient>
+        <linearGradient id="tile" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#D9EEFF" stop-opacity="0.9"/>
+        </linearGradient>
+        <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0057FF"/>
+            <stop offset="100%" stop-color="#00B4FF"/>
+        </linearGradient>
+    </defs>
+    <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bg)"/>
+    <g fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5">
+        <path d="M20 18h24v28H20z" opacity="0.35"/>
+    </g>
+    <g>
+        <rect x="18" y="16" width="14" height="14" rx="3" fill="url(#tile)"/>
+        <rect x="32" y="16" width="14" height="14" rx="3" fill="url(#accent)"/>
+        <rect x="18" y="30" width="14" height="14" rx="3" fill="url(#accent)"/>
+        <rect x="32" y="30" width="14" height="14" rx="3" fill="url(#tile)"/>
+        <rect x="25" y="37" width="14" height="14" rx="3" fill="url(#tile)" transform="rotate(-45 32 44)"/>
+    </g>
+</svg>
