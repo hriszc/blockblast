@@ -1,11 +1,5 @@
 // ==================== Constants ====================
-const BOARD_SIZE = 8;
-const GLOBAL_PLAYERS = 10000000;
-const TOP_SCORE_ESTIMATE = 45000;
-const MEAN_SCORE = TOP_SCORE_ESTIMATE * 0.45; // 20250, median player score
-const STD_DEV = TOP_SCORE_ESTIMATE * 0.18; // 8100, standard deviation
-
-const PIECE_SHAPES = [
+const BASE_PIECE_SHAPES = [
     [[1]],
     [[1, 1]],
     [[1], [1]],
@@ -20,18 +14,62 @@ const PIECE_SHAPES = [
     [[0, 1, 0], [1, 1, 1]]
 ];
 
+const EXTENDED_PIECE_SHAPES = [
+    [[1, 1, 1], [1, 1, 1]],
+    [[1, 1, 1], [1, 1, 0]],
+    [[1, 1, 1], [0, 1, 1]],
+    [[1, 0, 0], [1, 1, 1]],
+    [[0, 0, 1], [1, 1, 1]],
+    [[1, 1, 0], [0, 1, 1]],
+    [[0, 1, 1], [1, 1, 0]],
+    [[1, 1, 1, 1, 1]],
+    [[1], [1], [1], [1], [1]],
+    [[1, 1, 1], [0, 1, 0], [0, 1, 0]]
+];
+
+const VARIANT_SETTINGS = {
+    classic: {
+        boardSize: 8,
+        pieceShapes: BASE_PIECE_SHAPES,
+        pieceColors: [1],
+        titleKey: 'title',
+        headerKey: 'header'
+    },
+    online: {
+        boardSize: 10,
+        pieceShapes: BASE_PIECE_SHAPES.concat(EXTENDED_PIECE_SHAPES),
+        pieceColors: [1, 2, 3, 4, 5, 6],
+        titleKey: 'titleOnline',
+        headerKey: 'headerOnline'
+    }
+};
+
+function getVariantConfig() {
+    const variant = document.body?.dataset?.variant || 'classic';
+    return VARIANT_SETTINGS[variant] || VARIANT_SETTINGS.classic;
+}
+
+const VARIANT = getVariantConfig();
+const BOARD_SIZE = VARIANT.boardSize;
+const GLOBAL_PLAYERS = 10000000;
+const TOP_SCORE_ESTIMATE = 45000;
+const MEAN_SCORE = TOP_SCORE_ESTIMATE * 0.45; // 20250, median player score
+const STD_DEV = TOP_SCORE_ESTIMATE * 0.18; // 8100, standard deviation
+const PIECE_SHAPES = VARIANT.pieceShapes;
+const PIECE_COLORS = VARIANT.pieceColors;
+
 // ==================== Internationalization ====================
 const translations = {
-    'zh-CN': { 'title': 'Block Blast 游戏', 'header': '🎮 Block Blast', 'scoreLabel': '分数', 'bestScoreLabel': '最高分', 'rankLabel': '全球排名', 'percentileLabel': '分位', 'newGameBtn': '新游戏', 'soundOn': '🔊 音效开', 'soundOff': '🔇 音效关', 'gameOverTitle': '游戏结束！', 'finalScoreLabel': '最终分数', 'tryAgainBtn': '再来一局', 'comboText': 'x 连击! 🎉', 'themeLabel': '深色主题', 'languageLabel': 'Language', 'shareTwitter': '分享到 X', 'copyShare': '复制分享文案', 'shareText': '我在 Block Blast 获得了 {score} 分，全球排名 {rank}！你能超越我吗？🎮', 'copied': '已复制！' },
-    'en': { 'title': 'Block Blast Game', 'header': '🎮 Block Blast', 'scoreLabel': 'Score', 'bestScoreLabel': 'Best', 'rankLabel': 'Global Rank', 'percentileLabel': 'Top', 'newGameBtn': 'New Game', 'soundOn': '🔊 Sound On', 'soundOff': '🔇 Sound Off', 'gameOverTitle': 'Game Over!', 'finalScoreLabel': 'Final Score', 'tryAgainBtn': 'Play Again', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Dark Mode', 'languageLabel': 'Language', 'shareTwitter': 'Share on X', 'copyShare': 'Copy Share Text', 'shareText': 'I scored {score} points on Block Blast, ranked {rank} globally! Can you beat me? 🎮', 'copied': 'Copied!' },
-    'es': { 'title': 'Juego Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'Puntuación', 'bestScoreLabel': 'Mejor', 'rankLabel': 'Ranking Global', 'percentileLabel': 'Top', 'newGameBtn': 'Nuevo Juego', 'soundOn': '🔊 Sonido On', 'soundOff': '🔇 Sonido Off', 'gameOverTitle': '¡Juego Terminado!', 'finalScoreLabel': 'Puntuación Final', 'tryAgainBtn': 'Jugar de Nuevo', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Modo Oscuro', 'languageLabel': 'Idioma', 'shareTwitter': 'Compartir en X', 'copyShare': 'Copiar Texto', 'shareText': '¡Obtuve {score} puntos en Block Blast, clasificado {rank} globalmente! ¿Puedes superarme? 🎮', 'copied': '¡Copiado!' },
-    'fr': { 'title': 'Jeu Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'Score', 'bestScoreLabel': 'Meilleur', 'rankLabel': 'Classement Mondial', 'percentileLabel': 'Top', 'newGameBtn': 'Nouveau Jeu', 'soundOn': '🔊 Son On', 'soundOff': '🔇 Son Off', 'gameOverTitle': 'Jeu Terminé!', 'finalScoreLabel': 'Score Final', 'tryAgainBtn': 'Rejouer', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Mode Sombre', 'languageLabel': 'Langue', 'shareTwitter': 'Partager sur X', 'copyShare': 'Copier le Texte', 'shareText': 'J\'ai marqué {score} points sur Block Blast, classé {rank} mondialement! Pouvez-vous me battre? 🎮', 'copied': 'Copié!' },
-    'de': { 'title': 'Block Blast Spiel', 'header': '🎮 Block Blast', 'scoreLabel': 'Punktzahl', 'bestScoreLabel': 'Beste', 'rankLabel': 'Weltweiter Rang', 'percentileLabel': 'Top', 'newGameBtn': 'Neues Spiel', 'soundOn': '🔊 Ton An', 'soundOff': '🔇 Ton Aus', 'gameOverTitle': 'Spiel Vorbei!', 'finalScoreLabel': 'Endpunktzahl', 'tryAgainBtn': 'Nochmal Spielen', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Dunkler Modus', 'languageLabel': 'Sprache', 'shareTwitter': 'Auf X Teilen', 'copyShare': 'Text Kopieren', 'shareText': 'Ich habe {score} Punkte in Block Blast erzielt, weltweit auf Platz {rank}! Kannst du mich schlagen? 🎮', 'copied': 'Kopiert!' },
-    'ja': { 'title': 'Block Blast ゲーム', 'header': '🎮 Block Blast', 'scoreLabel': 'スコア', 'bestScoreLabel': 'ベスト', 'rankLabel': '世界ランキング', 'percentileLabel': 'トップ', 'newGameBtn': '新しいゲーム', 'soundOn': '🔊 サウンド オン', 'soundOff': '🔇 サウンド オフ', 'gameOverTitle': 'ゲームオーバー！', 'finalScoreLabel': '最終スコア', 'tryAgainBtn': 'もう一度プレイ', 'comboText': 'x コンボ! 🎉', 'themeLabel': 'ダークモード', 'languageLabel': '言語', 'shareTwitter': 'Xでシェア', 'copyShare': 'テキストをコピー', 'shareText': 'Block Blastで{score}点を獲得し、世界{rank}位にランクイン！あなたは私を超えられますか？🎮', 'copied': 'コピーしました！' },
-    'ko': { 'title': 'Block Blast 게임', 'header': '🎮 Block Blast', 'scoreLabel': '점수', 'bestScoreLabel': '최고', 'rankLabel': '글로벌 순위', 'percentileLabel': '상위', 'newGameBtn': '새 게임', 'soundOn': '🔊 사운드 켜기', 'soundOff': '🔇 사운드 끄기', 'gameOverTitle': '게임 오버!', 'finalScoreLabel': '최종 점수', 'tryAgainBtn': '다시 플레이', 'comboText': 'x 콤보! 🎉', 'themeLabel': '다크 모드', 'languageLabel': '언어', 'shareTwitter': 'X에 공유', 'copyShare': '텍스트 복사', 'shareText': 'Block Blast에서 {score}점을 획득하고 전 세계 {rank}위를 기록했습니다! 당신은 저를 이길 수 있나요? 🎮', 'copied': '복사됨!' },
-    'pt': { 'title': 'Jogo Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'Pontuação', 'bestScoreLabel': 'Melhor', 'rankLabel': 'Ranking Global', 'percentileLabel': 'Top', 'newGameBtn': 'Novo Jogo', 'soundOn': '🔊 Som Ligado', 'soundOff': '🔇 Som Desligado', 'gameOverTitle': 'Jogo Acabou!', 'finalScoreLabel': 'Pontuação Final', 'tryAgainBtn': 'Jogar Novamente', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Modo Escuro', 'languageLabel': 'Idioma', 'shareTwitter': 'Compartilhar no X', 'copyShare': 'Copiar Texto', 'shareText': 'Fiz {score} pontos no Block Blast, classificado {rank} globalmente! Você pode me superar? 🎮', 'copied': 'Copiado!' },
-    'ru': { 'title': 'Игра Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'Счёт', 'bestScoreLabel': 'Лучший', 'rankLabel': 'Мировой Рейтинг', 'percentileLabel': 'Топ', 'newGameBtn': 'Новая Игра', 'soundOn': '🔊 Звук Вкл', 'soundOff': '🔇 Звук Выкл', 'gameOverTitle': 'Игра Окончена!', 'finalScoreLabel': 'Финальный Счёт', 'tryAgainBtn': 'Играть Снова', 'comboText': 'x КОМБО! 🎉', 'themeLabel': 'Тёмный Режим', 'languageLabel': 'Язык', 'shareTwitter': 'Поделиться в X', 'copyShare': 'Скопировать Текст', 'shareText': 'Я набрал {score} очков в Block Blast, занял {rank} место в мире! Сможешь меня обыграть? 🎮', 'copied': 'Скопировано!' },
-    'ar': { 'title': 'لعبة Block Blast', 'header': '🎮 Block Blast', 'scoreLabel': 'النقاط', 'bestScoreLabel': 'الأفضل', 'rankLabel': 'الترتيب العالمي', 'percentileLabel': 'الأعلى', 'newGameBtn': 'لعبة جديدة', 'soundOn': '🔊 الصوت مفعل', 'soundOff': '🔇 الصوت مغلق', 'gameOverTitle': 'انتهت اللعبة!', 'finalScoreLabel': 'النقاط النهائية', 'tryAgainBtn': 'العب مرة أخرى', 'comboText': 'x كومبو! 🎉', 'themeLabel': 'الوضع الداكن', 'languageLabel': 'اللغة', 'shareTwitter': 'مشاركة على X', 'copyShare': 'نسخ النص', 'shareText': 'حصلت على {score} نقطة في Block Blast، المرتبة {rank} عالميًا! هل يمكنك التغلب علي؟ 🎮', 'copied': 'تم النسخ!' }
+    'zh-CN': { 'title': 'Block Blast 游戏', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': '分数', 'bestScoreLabel': '最高分', 'rankLabel': '全球排名', 'percentileLabel': '分位', 'newGameBtn': '新游戏', 'soundOn': '🔊 音效开', 'soundOff': '🔇 音效关', 'gameOverTitle': '游戏结束！', 'finalScoreLabel': '最终分数', 'tryAgainBtn': '再来一局', 'comboText': 'x 连击! 🎉', 'themeLabel': '深色主题', 'languageLabel': 'Language', 'shareTwitter': '分享到 X', 'copyShare': '复制分享文案', 'shareText': '我在 Block Blast 获得了 {score} 分，全球排名 {rank}！你能超越我吗？🎮', 'copied': '已复制！', 'onlineLink': 'Block Blast Online', 'classicLink': '经典模式' },
+    'en': { 'title': 'Block Blast Game', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Score', 'bestScoreLabel': 'Best', 'rankLabel': 'Global Rank', 'percentileLabel': 'Top', 'newGameBtn': 'New Game', 'soundOn': '🔊 Sound On', 'soundOff': '🔇 Sound Off', 'gameOverTitle': 'Game Over!', 'finalScoreLabel': 'Final Score', 'tryAgainBtn': 'Play Again', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Dark Mode', 'languageLabel': 'Language', 'shareTwitter': 'Share on X', 'copyShare': 'Copy Share Text', 'shareText': 'I scored {score} points on Block Blast, ranked {rank} globally! Can you beat me? 🎮', 'copied': 'Copied!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Classic Mode' },
+    'es': { 'title': 'Juego Block Blast', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Puntuación', 'bestScoreLabel': 'Mejor', 'rankLabel': 'Ranking Global', 'percentileLabel': 'Top', 'newGameBtn': 'Nuevo Juego', 'soundOn': '🔊 Sonido On', 'soundOff': '🔇 Sonido Off', 'gameOverTitle': '¡Juego Terminado!', 'finalScoreLabel': 'Puntuación Final', 'tryAgainBtn': 'Jugar de Nuevo', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Modo Oscuro', 'languageLabel': 'Idioma', 'shareTwitter': 'Compartir en X', 'copyShare': 'Copiar Texto', 'shareText': '¡Obtuve {score} puntos en Block Blast, clasificado {rank} globalmente! ¿Puedes superarme? 🎮', 'copied': '¡Copiado!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Modo Clásico' },
+    'fr': { 'title': 'Jeu Block Blast', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Score', 'bestScoreLabel': 'Meilleur', 'rankLabel': 'Classement Mondial', 'percentileLabel': 'Top', 'newGameBtn': 'Nouveau Jeu', 'soundOn': '🔊 Son On', 'soundOff': '🔇 Son Off', 'gameOverTitle': 'Jeu Terminé!', 'finalScoreLabel': 'Score Final', 'tryAgainBtn': 'Rejouer', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Mode Sombre', 'languageLabel': 'Langue', 'shareTwitter': 'Partager sur X', 'copyShare': 'Copier le Texte', 'shareText': 'J\'ai marqué {score} points sur Block Blast, classé {rank} mondialement! Pouvez-vous me battre? 🎮', 'copied': 'Copié!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Mode Classique' },
+    'de': { 'title': 'Block Blast Spiel', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Punktzahl', 'bestScoreLabel': 'Beste', 'rankLabel': 'Weltweiter Rang', 'percentileLabel': 'Top', 'newGameBtn': 'Neues Spiel', 'soundOn': '🔊 Ton An', 'soundOff': '🔇 Ton Aus', 'gameOverTitle': 'Spiel Vorbei!', 'finalScoreLabel': 'Endpunktzahl', 'tryAgainBtn': 'Nochmal Spielen', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Dunkler Modus', 'languageLabel': 'Sprache', 'shareTwitter': 'Auf X Teilen', 'copyShare': 'Text Kopieren', 'shareText': 'Ich habe {score} Punkte in Block Blast erzielt, weltweit auf Platz {rank}! Kannst du mich schlagen? 🎮', 'copied': 'Kopiert!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Klassischer Modus' },
+    'ja': { 'title': 'Block Blast ゲーム', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'スコア', 'bestScoreLabel': 'ベスト', 'rankLabel': '世界ランキング', 'percentileLabel': 'トップ', 'newGameBtn': '新しいゲーム', 'soundOn': '🔊 サウンド オン', 'soundOff': '🔇 サウンド オフ', 'gameOverTitle': 'ゲームオーバー！', 'finalScoreLabel': '最終スコア', 'tryAgainBtn': 'もう一度プレイ', 'comboText': 'x コンボ! 🎉', 'themeLabel': 'ダークモード', 'languageLabel': '言語', 'shareTwitter': 'Xでシェア', 'copyShare': 'テキストをコピー', 'shareText': 'Block Blastで{score}点を獲得し、世界{rank}位にランクイン！あなたは私を超えられますか？🎮', 'copied': 'コピーしました！', 'onlineLink': 'Block Blast Online', 'classicLink': 'クラシックモード' },
+    'ko': { 'title': 'Block Blast 게임', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': '점수', 'bestScoreLabel': '최고', 'rankLabel': '글로벌 순위', 'percentileLabel': '상위', 'newGameBtn': '새 게임', 'soundOn': '🔊 사운드 켜기', 'soundOff': '🔇 사운드 끄기', 'gameOverTitle': '게임 오버!', 'finalScoreLabel': '최종 점수', 'tryAgainBtn': '다시 플레이', 'comboText': 'x 콤보! 🎉', 'themeLabel': '다크 모드', 'languageLabel': '언어', 'shareTwitter': 'X에 공유', 'copyShare': '텍스트 복사', 'shareText': 'Block Blast에서 {score}점을 획득하고 전 세계 {rank}위를 기록했습니다! 당신은 저를 이길 수 있나요? 🎮', 'copied': '복사됨!', 'onlineLink': 'Block Blast Online', 'classicLink': '클래식 모드' },
+    'pt': { 'title': 'Jogo Block Blast', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Pontuação', 'bestScoreLabel': 'Melhor', 'rankLabel': 'Ranking Global', 'percentileLabel': 'Top', 'newGameBtn': 'Novo Jogo', 'soundOn': '🔊 Som Ligado', 'soundOff': '🔇 Som Desligado', 'gameOverTitle': 'Jogo Acabou!', 'finalScoreLabel': 'Pontuação Final', 'tryAgainBtn': 'Jogar Novamente', 'comboText': 'x COMBO! 🎉', 'themeLabel': 'Modo Escuro', 'languageLabel': 'Idioma', 'shareTwitter': 'Compartilhar no X', 'copyShare': 'Copiar Texto', 'shareText': 'Fiz {score} pontos no Block Blast, classificado {rank} globalmente! Você pode me superar? 🎮', 'copied': 'Copiado!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Modo Clássico' },
+    'ru': { 'title': 'Игра Block Blast', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'Счёт', 'bestScoreLabel': 'Лучший', 'rankLabel': 'Мировой Рейтинг', 'percentileLabel': 'Топ', 'newGameBtn': 'Новая Игра', 'soundOn': '🔊 Звук Вкл', 'soundOff': '🔇 Звук Выкл', 'gameOverTitle': 'Игра Окончена!', 'finalScoreLabel': 'Финальный Счёт', 'tryAgainBtn': 'Играть Снова', 'comboText': 'x КОМБО! 🎉', 'themeLabel': 'Тёмный Режим', 'languageLabel': 'Язык', 'shareTwitter': 'Поделиться в X', 'copyShare': 'Скопировать Текст', 'shareText': 'Я набрал {score} очков в Block Blast, занял {rank} место в мире! Сможешь меня обыграть? 🎮', 'copied': 'Скопировано!', 'onlineLink': 'Block Blast Online', 'classicLink': 'Классический режим' },
+    'ar': { 'title': 'لعبة Block Blast', 'titleOnline': 'Block Blast Online', 'header': '🎮 Block Blast', 'headerOnline': '🎮 Block Blast Online', 'scoreLabel': 'النقاط', 'bestScoreLabel': 'الأفضل', 'rankLabel': 'الترتيب العالمي', 'percentileLabel': 'الأعلى', 'newGameBtn': 'لعبة جديدة', 'soundOn': '🔊 الصوت مفعل', 'soundOff': '🔇 الصوت مغلق', 'gameOverTitle': 'انتهت اللعبة!', 'finalScoreLabel': 'النقاط النهائية', 'tryAgainBtn': 'العب مرة أخرى', 'comboText': 'x كومبو! 🎉', 'themeLabel': 'الوضع الداكن', 'languageLabel': 'اللغة', 'shareTwitter': 'مشاركة على X', 'copyShare': 'نسخ النص', 'shareText': 'حصلت على {score} نقطة في Block Blast، المرتبة {rank} عالميًا! هل يمكنك التغلب علي؟ 🎮', 'copied': 'تم النسخ!', 'onlineLink': 'Block Blast Online', 'classicLink': 'الوضع الكلاسيكي' }
 };
 
 // ==================== Locale Mapping ====================
@@ -141,7 +179,8 @@ function setLanguage(lang) {
         if (translations[lang][key]) el.textContent = translations[lang][key];
     });
 
-    document.title = translations[lang].title;
+    const titleKey = VARIANT.titleKey || 'title';
+    document.title = translations[lang][titleKey] || translations[lang].title;
     updateSoundButtonText();
     updateGlobalRank();
 }
@@ -188,6 +227,7 @@ function loadSettings() {
 // ==================== Rendering ====================
 function createBoardCells() {
     DOM.gameBoard.innerHTML = '';
+    DOM.gameBoard.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, 1fr)`;
     boardCells = [];
     for (let i = 0; i < BOARD_SIZE; i++) {
         boardCells[i] = [];
@@ -208,19 +248,41 @@ function renderBoard() {
     }
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
-            boardCells[i][j].classList.toggle('filled', !!board[i][j]);
+            const colorId = board[i][j];
+            boardCells[i][j].classList.toggle('filled', !!colorId);
+            applyCellColor(boardCells[i][j], colorId);
         }
     }
 }
 
-function createPieceDOM(shape) {
+function applyCellColor(cell, colorId) {
+    const previous = cell.dataset.colorId;
+    if (previous) {
+        cell.classList.remove(`color-${previous}`);
+    }
+    if (colorId) {
+        cell.classList.add(`color-${colorId}`);
+        cell.dataset.colorId = String(colorId);
+    } else {
+        delete cell.dataset.colorId;
+    }
+}
+
+function getRandomColorId() {
+    if (!PIECE_COLORS.length) return 1;
+    return PIECE_COLORS[Math.floor(Math.random() * PIECE_COLORS.length)];
+}
+
+function createPieceDOM(shape, colorId) {
     const piece = document.createElement('div');
     piece.className = 'piece';
     piece.style.gridTemplateColumns = `repeat(${shape[0].length}, 1fr)`;
     shape.forEach(row => row.forEach(cell => {
         const cellDiv = document.createElement('div');
         cellDiv.className = 'piece-cell';
-        if (cell) cellDiv.classList.add('filled');
+        if (cell) {
+            cellDiv.classList.add('filled', `color-${colorId}`);
+        }
         piece.appendChild(cellDiv);
     }));
     return piece;
@@ -259,12 +321,13 @@ function generateNewPieces() {
     
     for (let i = 0; i < pieceWrappers.length; i++) {
         const shape = PIECE_SHAPES[Math.floor(Math.random() * PIECE_SHAPES.length)];
-        currentPieces.push({ shape, used: false, id: i });
+        const colorId = getRandomColorId();
+        currentPieces.push({ shape, used: false, id: i, colorId });
         const wrapper = pieceWrappers[i];
         wrapper.dataset.id = i;
         wrapper.classList.remove('used');
         wrapper.innerHTML = '';
-        wrapper.appendChild(createPieceDOM(shape));
+        wrapper.appendChild(createPieceDOM(shape, colorId));
     }
     
     setTimeout(() => {
@@ -301,6 +364,7 @@ function hasValidMoves() {
 
 function placePiece(row, col) {
     const shape = currentPieces[selectedPiece].shape;
+    const colorId = currentPieces[selectedPiece].colorId;
     if (!canPlacePiece(row, col, shape)) {
         playErrorSound();
         return;
@@ -310,7 +374,7 @@ function placePiece(row, col) {
     
     for (let i = 0; i < shape.length; i++) {
         for (let j = 0; j < shape[i].length; j++) {
-            if (shape[i][j]) board[row + i][col + j] = 1;
+            if (shape[i][j]) board[row + i][col + j] = colorId;
         }
     }
     
@@ -353,8 +417,8 @@ function clearLines() {
     let linesToClear = { rows: [], cols: [] };
     
     for(let i=0; i<BOARD_SIZE; i++) {
-        if(board[i].every(cell => cell === 1)) linesToClear.rows.push(i);
-        if(board.every(row => row[i] === 1)) linesToClear.cols.push(i);
+        if(board[i].every(cell => cell)) linesToClear.rows.push(i);
+        if(board.every(row => row[i])) linesToClear.cols.push(i);
     }
     
     const cellsToClear = new Set();
@@ -396,7 +460,7 @@ function startDrag(e, pieceId) {
     
     dragGhost = document.createElement('div');
     dragGhost.className = 'drag-ghost';
-    dragGhost.appendChild(createPieceDOM(currentPieces[pieceId].shape));
+    dragGhost.appendChild(createPieceDOM(currentPieces[pieceId].shape, currentPieces[pieceId].colorId));
     document.body.appendChild(dragGhost);
     
     document.addEventListener('mousemove', onDragMove);
