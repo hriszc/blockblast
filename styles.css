@@ -119,6 +119,7 @@ h1 { color: var(--text-accent); font-size: 28px; font-weight: 700; user-select: 
     transition: transform 0.2s, background 0.2s;
 }
 .variant-link:hover { transform: translateY(-1px); background: var(--bg-piece-wrapper); }
+.variant-links { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 
 .score-board {
     display: grid;
